@@ -1,0 +1,971 @@
+---
+title: "Introduction to SC19035"
+author: "Yingli"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to SC19035}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# The introduction of two function
+
+__SC19035__ is a simple R package developed to two function for the 'Statistical Computing' course. The first function is called _mytable_,which is to build a contingency table of the counts at each combination of factor levels with two objects.And the other function ,namely _Numerical integration_ , is prepared to deal with numerical integration with integrate using R.
+
+
+## _mytable_
+
+The source R code for _mytable_ is as follows:
+```{r,eval=FALSE}
+mytable <-function(x,y){
+  x=as.factor(x)
+  y=as.factor(y)
+  xi=as.integer(x)
+  xm=as.integer(max(xi))
+  yi=(as.integer(y)-1L)*xm
+  ym=as.integer(max(yi)+xm)
+  matrix(.Internal(tabulate(xi+yi,ym)),xm)
+}
+```
+
+
+The source R code for _Numerical integration_ is as follows:
+```{r,eval=FALSE}
+cdf <- function(x,p,q) {
+  n<-length(x)
+  res<-numeric(n)
+  for(i in 1:n){
+    res[i]<-integrate(f, lower=-Inf, upper=x[i],
+                      rel.tol=.Machine$double.eps^0.25,
+                      p=p,q=q)$value
+  }
+  return(res)
+}
+```
+
+
+# Homework
+# HW0(2019/09/20)
+Use knitr to produce at least 3 example(texts, tables and figures).
+## Answer
+## text
+```{r}
+paste("R","for Beginning")
+paste("Today is",date())
+```
+We can use the function paste() to concatenate its variables into a string separated by spaces.
+
+## figures
+```{r}
+A<-array(1:9,dim=(c(3,3)))
+B<-array(9:1,dim=(c(3,3)))
+C<-A%*%B;C
+```
+A%*%B represents the product of two matrices
+
+## tables
+```{r}
+X1<-c(35,42,46,37,38,42,41)
+X2<-c(60,72,64,62,71,69,75)
+plot(X1,X2)
+hist(X1)
+```
+X1represent the weight and X2 is the waist circumference of the students, we draw their scatter plot first, and then draw the histogram of the weight.
+
+# HW1(2019/09/29)
+## Question1(Exercise3-4)
+Answer:
+### 1.Develop an algorithm to generate the function that satisify Rayleigh(σ) distribution.Suppose sigma=4.
+```{r}
+rrayleigh<-function(n,sigma){
+  sigma<-1:1000
+  u<-runif(n)
+  x<-sqrt(-2*sigma**{2}*log(1-u))
+  return (x)
+}
+
+n1<-1000
+sigma1<-4
+rr=head(rrayleigh(n1,sigma1),10)
+hist(rrayleigh(n1,sigma1),prob=TRUE)
+```
+### 2.Suppose sigma=10.
+```{r}
+n<-1000
+u<-runif(n)
+sigma<-10
+x<-sqrt(-2*sigma**{2}*log(1-u))
+hist(x,prob=TRUE,main = expression(f(x)==x/(sigma**2)*exp(-((x/sigma)**2)/2)))
+```
+
+## Question2(Exercise3-11)
+## Answer：
+### 1.Generate a sample from a mixture. Suppose the p1=0.75 
+```{r}
+n<-1000
+x1<-rnorm(n,0,1)
+x2<-rnorm(n,3,1)
+u<-runif(n)
+p<-as.integer(u>0.25)
+x<-p*x1+(1-p)*x2 ##the mixture
+```
+### 2.Graph the histogram of the sample withdensity superimposed, for p1 = 0.75.
+```{r}
+hist(x, prob = TRUE)
+```
+### 3.Repeat with different values
+```{r}
+q1<-as.integer(u>0.5)
+y1<-q1*x1+(1-q1)*x2
+hist(y1,prob=TRUE)
+q2<-as.integer(u>0.42)
+y2<-q2*x1+(1-q2)*x2
+hist(y2,prob=TRUE)
+```
+   From the above pictures, the empirical distribution of the mixture doesn't appear to bebimodal.
+
+## Question 3(Exercise3-11)
+Write a function to generate a random sample from a Wd(Σ, n) (Wishart)distribution for n>d + 1 ≥ 1,based on Bartlett’s decomposition.
+### 1.Based on Bartlett’s decomposition,generate a function
+```{r}
+require(graphics)
+runif.wis<-function(sigma,n){
+  a<-ncol(sigma)
+  b<-chol(sigma)
+  X<-matrix(ncol=a,chol=a)
+  for(i in 1:a){
+    for(j in 1:a){
+      X[i,j]=rnorm(2,4)
+    }
+  }
+ X[lower.tri(X)]=0
+ C<-numeric(a)
+ for(i in 1:a){
+ C[i]=rchisq(1,n-i+1)
+  X[i,i]=C[i]
+ }
+  d<-b%*%X
+  e<-t(X)%*%t(b)
+  f<-d%*%e
+ return(f)
+}
+```
+
+# HW2(2019/10/11)
+## Question 1(Exercise 5.1)
+Compute a Monte Carlo estimate of
+$$\int_0^{π/3}sint{\rm d}t$$
+
+## Answer 
+$$\int_0^{π/3}sint{\rm d}t=(π/3)\int_0^{1}sin(3x/π){\rm d}x$$
+### estimate
+```{r}
+m <- 10000
+x <- runif(m)
+theta.hat <- mean(sin(pi/3*x)) * (pi/3)
+print(theta.hat)
+print(1-cos(pi/3))
+```
+
+
+
+## Question 2(Exercise 5.10)
+Use Monte Carlo integration with antithetic variables to estimate
+$$\int_0^1\frac{e^{-x}}{1+x^2}{\rm d}x$$
+and find the approximate reduction in variance as a percentage of the variance
+without variance reduction.
+
+## Answer
+```{r}
+## the definition of function
+MC.Phi <- function(x, R = 10000, antithetic = TRUE) {
+u <- runif(R/2)
+if (!antithetic) v <- runif(R/2) else
+v <- 1 - u
+u <- c(u, v)
+cdf <- numeric(length(x))
+for (i in 0:length(x)) {
+g <-mean(exp(-u * x)/(1+(u*x)^2))
+}
+g
+}
+## Use Monte Carlo integration with antithetic variables to estimate
+set.seed(200)
+MC1<-MC.Phi(1,anti=FALSE)
+MC2<-MC.Phi(1)
+print(MC1)
+print(MC2)
+
+## find the approximate reduction in variance
+m <- 1000
+MC1 <- MC2<-numeric(m)
+x<-1
+for (i in 1:m) {
+MC1[i] <- MC.Phi(x,R = 1000, anti = FALSE)
+MC2[i] <- MC.Phi(x,R = 1000)
+}
+ print(sd(MC1))
+ print(sd(MC2))
+ print((var(MC1)-var(MC2))/var(MC1))
+```
+
+## Question 3(Exercise 5.15)
+## Answer
+```{r}
+m <- 10000
+theta.hat <- se <- numeric(5)
+g <- function(x) {
+exp(-x - log(1+x^2)) * (x > 0) * (x < 1)
+}
+# choose the importance function : f3=exp（-x）/(1+exp（-1）)
+u <- runif(m) #f3, inverse transform method
+x <- - log(1 - u * (1 - exp(-1)))
+fg<- function(x){ g(x) / (exp(-x) / (1 - exp(-1)))
+}
+#stratify
+M <- 10000 #number of replicates
+k <- 5 #number of strata
+r <- M / k #replicates per stratum
+N <- 50 #number of times to repeat the estimation
+T2 <- numeric(k)
+estimates <- matrix(0, N, 2)
+# estimate
+for (i in 1:N) {
+estimates[i, 1] <- mean(fg(runif(M)))
+for (j in 1:k)
+T2[j] <- mean(fg(runif(M/k, (j-1)/k, j/k)))
+estimates[i, 2] <- mean(T2)
+}
+apply(estimates, 2, mean)
+apply(estimates, 2, var)
+```
+
+# HW3(2019/11/01)
+## Question 1(Exercises 6.7)
+Estimate the power of the skewness test of normality against symmetric Beta(α,α) distributions and comment on the results. Are the results diﬀerent for heavy-tailed symmetric alternatives such as t(ν)?
+## Answer
+$$Beta(α,α)=\int_0^{1}t^{α-1}(1-t)^{α-1}{\rm d}t$$
+```{r}
+
+alpha <- .5 
+n <- 20 
+m <- 1000 
+beta<- seq(1, 40, 1)
+N <- length(beta) 
+pwr <- numeric(N) 
+cv <- qnorm(1-alpha/2, 0, sqrt(6*(n-2) / ((n+1)*(n+3))))#critical value for the skewness test 
+
+
+sk <- function(x) { #computes the sample skewness coeff. 
+  xbar <- mean(x) 
+  m3 <- mean((x - xbar)^3) 
+  m2 <- mean((x - xbar)^2) 
+  return( m3 / m2^1.5 ) 
+  } 
+
+for (j in 1:N) { #for each beta 
+  b<- beta[j] 
+  sktests <- numeric(m) 
+  for (i in 1:m) { #for each replicate 
+    x <- rbeta(n,b,b)
+    sktests[i] <- as.integer(abs(sk(x)) >= cv) 
+    } 
+  pwr[j] <- mean(sktests) } #plot power vs beta 
+
+
+plot(beta, pwr, type = "b", xlab = bquote(beta), ylim = c(0.3,0.5))
+abline(h = .1, lty = 3) 
+se <- sqrt(pwr * (1-pwr) / m) #add standard errors 
+lines(beta, pwr+se, lty = 3) 
+lines(beta, pwr-se, lty = 3)
+
+
+```
+
+
+## Question 2(Exercises 6.A)
+ Use Monte Carlo simulation to investigate whether the empirical Type I error rate of the t-test is approximately equal to the nominal signiﬁcance level α, when the sampled population is non-normal. The t-test is robust to mild departures from normality. Discuss the simulation results for the cases where the sampled population is (i) χ2(1), (ii) Uniform(0,2), and (iii) Exponential(rate=1). In each case, test H0 : µ = µ0 vs H0 : µ= µ0, where µ0 is the mean of χ2(1), Uniform(0,2), and Exponential(1), respectively. 
+## Answer
+Suppose the nominal signiﬁcance level α=0.05
+### 2.1 χ2(1)
+```{r}
+n <- 20 
+alpha <- .01 
+mu0 <- 1 
+m <- 10000 #number of replicates 
+p <- numeric(m) #storage for p-values 
+for (j in 1:m) { 
+  x <- rchisq(n,1)
+  ttest <- t.test(x, alternative = "greater", mu = mu0) 
+  p[j] <- ttest$p.value 
+  }
+p.hat <- mean(p < alpha) 
+se.hat <- sqrt(p.hat * (1 - p.hat) / m) 
+print(c(p.hat, se.hat))
+```
+ The empirical Type I error rate of the t-test isn't approximately equal to the nominal signiﬁcance level α, when the sampled population is χ2(1).
+### 2.2  Uniform(0,2)
+```{r}
+n <- 20 
+alpha <- .01 
+mu0 <- 1 
+m <- 10000 #number of replicates 
+p <- numeric(m) #storage for p-values 
+for (j in 1:m) { 
+  x <- runif(n,0,2)
+  ttest <- t.test(x, alternative = "greater", mu = mu0) 
+  p[j] <- ttest$p.value 
+  }
+p.hat <- mean(p < alpha) 
+se.hat <- sqrt(p.hat * (1 - p.hat) / m) 
+print(c(p.hat, se.hat))
+```
+  The empirical Type I error rate of the t-test is approximately equal to the nominal signiﬁcance level α, when the sampled population is Uniform(0,2).
+
+### 2.3 Exponential(rate=1)
+```{r}
+n <- 20 
+alpha <- .01 
+mu0 <- 1 
+m <- 10000 #number of replicates 
+p <- numeric(m) #storage for p-values 
+for (j in 1:m) { 
+  x <- rexp(n,1)
+  ttest <- t.test(x, alternative = "greater", mu = mu0) 
+  p[j] <- ttest$p.value 
+  }
+p.hat <- mean(p < alpha) 
+se.hat <- sqrt(p.hat * (1 - p.hat) / m) 
+print(c(p.hat, se.hat))
+```
+  The empirical Type I error rate of the t-test isn't approximately equal to the nominal signiﬁcance level α, when the sampled population is Exponential(rate=1).
+
+## Question 3
+If we obtain the powers for two methods under a particularsimulation setting with 10,000 experiments: say, 0.651 for onemethod and 0.676 for another method. Can we say the powersare different at 0.05 level?
+3.1 What is the corresponding hypothesis test problem?
+3.2 What test should we use? Z-test, two-sample t-test, paired-ttest or McNemar test?
+3.3 What information is needed to test your hypothesis?
+## Answer 
+  we can say the powersare different at 0.05 level.
+### Answer 3.1
+The corresponding hypothesis test problem is:
+H0:F(x)∈N,i.e N is the distribution of the method 1.
+### Answer 3.2
+we should use paired-ttest for its larger df.
+### Answer 3.3
+We need to know how many times that H0 is rejected or the number of P values < α 
+# HW4(2019/11/08)
+## Question 1(7.6)
+## Answer
+### the scatter diagram
+```{r}
+ library(bootstrap)
+data(scor)
+pairs(scor[1:5], main = "the scatter diagram ",bg = c("red", "green", "blue","yellow","black"))
+```
+
+### Compare
+```{r}
+library('GGally')
+set.seed(1836)
+sc <- scor[,c(1:5)]
+ggpairs(sc[sample.int(nrow(sc),20),])
+```
+
+```{r}
+# Estimate standard error
+#set up the bootstrap 
+B <- 100 #number of replicates 
+n <- nrow(scor) #sample size 
+R12 <- numeric(B) #storage for replicates
+#bootstrap estimate of standard error of R 
+for (b in 1:B) { 
+        i <- sample(1:n, size = n, replace = TRUE) 
+        MEC <- scor$mec[i] #i is a vector of indices 
+        VEC <- scor$vec[i] 
+        R12[b] <- cor(MEC, VEC) 
+ } 
+print(se.R12 <- sd(R12))
+```
+
+```{r}
+B <- 100 
+n <- nrow(scor)  
+R34 <- numeric(B)  
+for (b in 1:B) { 
+        i <- sample(1:n, size = n, replace = TRUE) 
+        ALG <- scor$alg[i] 
+        ANA <- scor$ana[i] 
+        R34[b] <- cor(ALG, ANA) 
+ } 
+print(se.R34 <- sd(R34))
+```
+
+```{r}
+B <- 100 
+n <- nrow(scor)  
+R35 <- numeric(B)  
+for (b in 1:B) { 
+        i <- sample(1:n, size = n, replace = TRUE) 
+        ALG <- scor$alg[i] 
+        STA <- scor$sta[i] 
+        R35[b] <- cor(ALG, STA) 
+ } 
+print(se.R35 <- sd(R35))
+```
+
+```{r}
+B <- 100 
+n <- nrow(scor)  
+R45 <- numeric(B)  
+for (b in 1:B) { 
+        i <- sample(1:n, size = n, replace = TRUE) 
+        ANA <- scor$ana[i] 
+        STA <- scor$sta[i] 
+        R45[b] <- cor(ANA, STA) 
+ } 
+print(se.R45 <- sd(R45))
+```
+
+## Question 2(7.B)
+## Answer
+```{r exercise 7.B}
+
+set.seed(1111)
+library(boot)
+n <- 100
+x <- rnorm(n, 0, 1)
+
+sk <- function(x,i) {
+xbar <- mean(x[i])
+m3 <- mean((x[i] - xbar)^3)
+m2 <- mean((x[i] - xbar)^2)
+return( m3 / m2^1.5 )
+}
+
+m<-50     
+# sample size
+norm1_cil<-norm1_cir<-numeric(n)
+basic1_cil<-basic1_cir<-numeric(n)
+perc1_cil<-perc1_cir<-numeric(n)
+# Monte Carlo and bootstrap
+for (i in 1:n) {
+  x<-rnorm(m)
+  boot.obj<-boot(x,statistic=sk,R=2000)
+  ci<-boot.ci(boot.obj,type=c('norm','basic','perc'))
+  norm1_cil[i]<-ci$normal[2]
+  norm1_cir[i]<-ci$normal[3]
+  basic1_cil[i]<-ci$basic[4]
+  basic1_cir[i]<-ci$basic[5]
+  perc1_cil[i]<-ci$percent[4]
+  perc1_cir[i]<-ci$percent[5]
+}
+# compute coverage rates 
+print(c(mean((norm1_cil<0)*(norm1_cir>0)),mean((basic1_cil<0)*(basic1_cir>0)),
+        mean((perc1_cil<0)*(perc1_cir>0))))
+
+```
+
+```{r}
+set.seed(1111)
+library(boot)
+n <- 100
+x <- rgamma(n, 0, 5)
+
+sk <- function(x,i) {
+xbar <- mean(x[i])
+m3 <- mean((x[i] - xbar)^3)
+m2 <- mean((x[i] - xbar)^2)
+return( m3 / m2^1.5 )
+}
+
+m<-50     
+# sample size
+norm2_cir<-numeric(n)
+basic2_cir<-numeric(n)
+perc2_cir<-numeric(n)
+# Monte Carlo and bootstrap
+for (i in 1:n) {
+  x <- rgamma(n,5)
+  boot.obj<-boot(x,statistic=sk,R=2000)
+  ci<-boot.ci(boot.obj,type=c('norm','basic','perc'))
+  norm2_cir[i]<-ci$normal[3]
+  basic2_cir[i]<-ci$basic[3]
+  perc2_cir[i]<-ci$percent[3]
+}
+# compute coverage rates 
+print(c(mean(norm2_cir>0),mean(basic2_cir>0),
+        mean(perc2_cir>0)))
+```
+
+# HW5(2019/11/15)
+## Exercise 7.8
+## Answer
+
+```{r}
+
+library(bootstrap)
+data(scor)
+scor_pca <- princomp(scor, cor = F)
+print(scor_pca )
+theta.hat <- 0.619115#the proportion of variance explained by the first principal component is 0.619115
+
+#jackknife
+n <- nrow(scor)
+theta.hat.j <- numeric(n)
+for (i in 1:n) {
+scor_j <- scor[-i, ]
+scor_j_cov <- cov(scor_j)
+theta.hat.j[i] <-eigen(scor_j_cov)$value[1] / sum(eigen(scor_j_cov)$value)
+}
+
+#bias
+bias <- (n - 1) * (mean(theta.hat.j) - theta.hat)
+print(bias)
+
+#standard error
+se <-sqrt((n - 1) * mean((theta.hat.j - mean(theta.hat.j)) ^ 2))
+print(se)
+
+
+```
+
+
+## Exercise 7.10
+## Answer
+```{r}
+
+library(DAAG)
+attach(ironslag)
+
+L1 <-  lm(magnetic ~ chemical)
+L2 <-  lm(magnetic ~ chemical + I(chemical ^ 2))
+L3 <-  lm(log(magnetic) ~ chemical)
+L4 <-  lm(magnetic ~ chemical +I(chemical^2)+ I(chemical^3)) # replacing the Log-Log model with a cubic polynomial model
+
+n <- length(ironslag$magnetic) #in DAAG ironslag 
+e1 <- e2 <- e3 <- e4 <- numeric(n)
+for (k in 1:n) { 
+  y <- magnetic[-k] 
+  x <- chemical[-k]
+  
+  J1 <- lm(y ~ x) 
+  yhat1 <- J1$coef[1] + J1$coef[2] * chemical[k] 
+  e1[k] <- magnetic[k] - yhat1
+
+  J2 <- lm(y ~ x + I(x^2)) 
+  yhat2 <- J2$coef[1] + J2$coef[2] * chemical[k] + J2$coef[3] * chemical[k]^2 
+  e2[k] <- magnetic[k] - yhat2
+
+  J3 <- lm(log(y) ~ x) 
+  logyhat3 <- J3$coef[1] + J3$coef[2] * chemical[k] 
+  yhat3 <- exp(logyhat3) 
+  e3[k] <- magnetic[k] - yhat3
+
+  J4 <- lm(y ~ x +I(x^2)+ I(x^3)) 
+  yhat4 <- J4$coef[1] + J4$coef[2] * chemical[k]+ J4$coef[3]*chemical[k]^2  +J4$coef[4]*chemical[k]^3
+  e4[k] <- magnetic[k] - yhat4
+} 
+print(c(mean(e1^2), mean(e2^2), mean(e3^2), mean(e4^2)))
+```
+According to the average error,We can say that the second model is the best among these models.
+
+```{r}
+print(J1)#Y=1.7881+0.8895X
+print(summary(J1))#Multiple R-squared is 0.5411
+
+print(J2)#Y=25.98525-1.52948*X+0.05707*X^2
+print(summary(J2))#Multiple R-squared is 0.607
+
+
+print(J3)#LOG(Y)=2.1274+0.04057*X
+print(summary(J3))#Multiple R-squared is 0.5307
+
+print(J4)#Y=-2.7637+2.9084*X+(-0.1609)*X^2+0.0034*X^3
+print(summary(J4))#Multiple R-squared is 0.6176
+
+
+```
+According to the R-squared,We can say that the third model is the best among these models.
+# HW6(2019/11/22)
+## Question 1
+
+## Answer
+   When nx != ny, using m =5 as the critical value for both Cx and Cy may not be acceptable. We can ﬁnd an appropriate critical value for Cx by substituting different values of m=5 until we ﬁnd one resulting in aprobability that is approximately α/2. The formula is
+   
+   
+   $$P(Cx>=m0/H0)=ln(nx/(nx+ny))*m$$
+```{r}
+
+n1 <- 10
+n2 <- 20
+mu1 <- mu2 <- 0 
+sigma1 <- sigma2 <- 1 
+m <- 1000
+
+
+##Estimate the m
+
+alpha<-0.06
+mx<-log(alpha/2)/log(n1/(n1+n2))
+my<-log(alpha/2)/log(n2/(n1+n2))
+print(c(mx,my))#choose the bigger my 
+
+
+# the critical value for both Cx,cy is m=8
+counttest <- function(x, y) { 
+  X <- x - mean(x) 
+  Y <- y - mean(y) 
+  outx <- sum(X > max(Y)) + sum(X < min(Y)) 
+  outy <- sum(Y > max(X)) + sum(Y < min(X)) # return 1 (reject) or 0 (do not reject H0) 
+  return(as.integer(max(c(outx, outy)) > 8)) 
+  }
+
+
+tests <- replicate(m, expr = {
+  x <- rnorm(n1, mu1, sigma1) 
+  y <- rnorm(n2, mu2, sigma2) 
+  x <- x - mean(x) #centered by sample mean 
+  y <- y - mean(y) 
+  counttest(x, y) })
+alphahat <- mean(tests) 
+print(alphahat) 
+
+```
+ In the simulation, each sample was centered by subtracting the sample mean, and the empirical Type I error rate was 0.036,which is under alpha(0.06).
+ 
+ 
+## Question 2
+Power comparison (distance correlation test versus ball covariance test)
+ Model1: Y =X/4+e
+ Model2: Y =X/4×e
+ X ∼ N(02, I2), e ∼ N(02, I2), X and e are independent.
+## Answer
+```{r}
+library(boot)
+library(Ball)
+library(MASS)
+library(ggplot2)
+alpha <- 0.05
+n<-c(seq(1,100,5))
+k<-50
+#denefite the statistic of cov,ndcov2
+
+dCov <- function(x, y) { 
+  x <- as.matrix(x) 
+  y <- as.matrix(y) 
+  n <- nrow(x) 
+  m <- nrow(y) 
+  if (n != m || n < 2) stop("Sample sizes must agree") 
+  if (! (all(is.finite(c(x, y))))) stop("Data contains missing or infinite values")
+  
+  Akl <- function(x) {
+    d <- as.matrix(dist(x)) 
+    m <- rowMeans(d) 
+    M <- mean(d) 
+    a <- sweep(d, 1, m) 
+    b <- sweep(a, 2, m) 
+    return(b + M) 
+    } 
+  A <- Akl(x) 
+  B <- Akl(y) 
+  dCov <- sqrt(mean(A * B)) 
+  dCov
+}
+
+
+ndCov2 <- function(z, ix, dims) { #dims contains dimensions of x and y 
+  p <- dims[1] 
+  q <- dims[2] 
+  d <- p + q 
+  x <- z[ , 1:p] #leave x as is 
+  y <- z[ix, -(1:p)] #permute rows of y 
+  return(nrow(z) * dCov(x, y)^2) 
+  } 
+
+
+set.seed(1001) 
+
+
+pow_dCor_Model1<-pow_ball_Model1<-pow_dCor_Model2<-pow_ball_Model2<-numeric(length(n))
+dcor1<-dcor2<-p_ball1<-p_ball2<-numeric(k)
+
+for (j in 1:length(n)) {
+  dcor1 <-p_ball1< -numeric(k)
+  for (i in 1:k) {
+    set.seed(i)
+    # the function "rmvnorm" is used to 
+    # generate the multidimensional normal data
+    X<-mvrnorm(n[j],rep(0,2),diag(2))
+    e<-mvrnorm(n[j],rep(0,2),diag(1,2))
+    Y1<-(X/4)+e
+    Z1<-cbind(X,Y1)
+   
+     t1<-bcov.test(X,Y1,R=99)
+    p_ball1[i]<-t1$p.value
+    boot.obj1<-boot(data=Z1,statistic=ndCov2,R=99,sim="permutation",dims=c(2, 2))
+    temp1<-c(boot.obj1$t0, boot.obj1$t)
+    dcor1[i]<-mean(temp1>=temp1[1])
+    }
+  pow_dCor_Model1[j]<-mean(dcor1<alpha)
+  pow_ball_Model1[j]<-mean(p_ball1<alpha)
+}
+dat1<-data.frame(pow_dCor_Model1,pow_ball_Model1)
+
+ggplot(dat1,aes(n))+geom_point(y=pow_dCor_Model1,fill="white")+geom_line(y=pow_dCor_Model1,colour="red")+geom_point(y=pow_ball_Model1,fill="white")+geom_line(y=pow_ball_Model1,colour="blue")
+
+
+for (j in 1:length(n)) {
+dcor2<- p_ball2<-numeric(k)
+for (i in 1:k) {
+    set.seed(i)
+    # the function "rmvnorm" is used to 
+    # generate the multidimensional normal data
+    X<-mvrnorm(n[j],rep(0,2),diag(2))
+    e<-mvrnorm(n[j],rep(0,2),diag(2))
+    Y2<-(X/4)*e
+    Z2<-cbind(X,Y2)
+   
+ t2<-bcov.test(X,Y2,R=99)
+    p_ball2[i]<-t2$p.value
+    boot.obj2<-boot(data=Z2,statistic=ndCov2,R=200,sim="permutation",dims=c(2, 2))
+    temp2<-c(boot.obj2$t0, boot.obj2$t)
+    dcor2[i]<-mean(temp2>=temp2[1])
+}
+  pow_dCor_Model2[j]<-mean(dcor2<alpha)
+  pow_ball_Model2[j]<-mean(p_ball2<alpha)
+  }
+dat2<-data.frame(pow_dCor_Model2,pow_ball_Model2)
+
+
+ggplot(dat2,aes(n))+geom_point(y=pow_dCor_Model1,fill="white")+geom_line(y=pow_dCor_Model1,colour="red")+geom_point(y=pow_ball_Model1,fill="white")+geom_line(y=pow_ball_Model1,colour="blue")
+```
+
+# HW8(2019/12/06)
+## Questiion1
+## Answer
+```{r}
+x<-c(10,20,50,100,1000)
+log(exp(x))==exp(log(x))
+exp(log(x))==x
+log(exp(x))==x
+```
+From the result,we can know that  the property :log(expx) = exp(logx)=x does not hold exactly in computer arithmetic
+
+```{r}
+x<-c(10,20,50,100,1000)
+isTRUE(all.equal(log(exp(x)), x,exp(log(x)))) 
+all.equal(log(exp(x)),x,exp(log(x))) 
+```
+According to the above, the identity doesn't hold with near equality
+
+
+## Exercise 11.5
+
+Write a function to solve the equation
+$$
+\begin{aligned} \frac{2 \Gamma\left(\frac{k}{2}\right)}{\sqrt{\pi(k-1)} \Gamma\left(\frac{k-1}{2}\right)} \int_{0}^{c_{k-1}}\left(1+\frac{u^{2}}{k-1}\right)^{-k / 2} d u \\=& \frac{2 \Gamma\left(\frac{k+1}{2}\right)}{\sqrt{\pi k} \Gamma\left(\frac{k}{2}\right)} \int_{0}^{c_{k}}\left(1+\frac{u^{2}}{k}\right)^{-(k+1) / 2} d u \\ \text { for } a, \text { where } & \\ c_{k} &=\sqrt{\frac{a^{2} k}{k+1-a^{2}}} \end{aligned}
+$$
+Compare the solutions with the points A(k) in Exercise 11.4.
+
+```{r}
+#11.5
+
+f = function(a,k){
+ 
+ ck = sqrt(a^2*k/(k+1-a^2))
+ l1 = integrate(function(u){(1+u^2/k)^(-(k+1)/2)},0,ck)$value
+ l2 = 2/sqrt(pi*k)*exp(lgamma((k+1)/2)-lgamma(k/2))
+ l1*l2
+}
+
+solve1 = function(k){
+  
+  output = uniroot(function(a){f(a,k)-f(a,k-1)},lower=1,upper=2)
+  output$root
+}
+
+k = c(4,25,100,500,1000)
+root1 = matrix(0,2,length(k))
+
+for (i in 1:length(k)){
+  root1[2,i]=round(solve1(k[i]),4)
+}
+
+root1[1,] = k
+rownames(root1) = c('k','root')
+root1
+
+#11.4
+
+S = function(a,k){
+ 
+ ck = sqrt(a^2*k/(k+1-a^2))
+ pt(ck,df=k,lower.tail=FALSE)
+}
+
+solve2 = function(k){
+  output = uniroot(function(a){S(a,k)-S(a,k-1)},lower=1,upper=2)
+  output$root
+}
+
+root2 = matrix(0,2,length(k))
+
+for (i in 1:length(k)){
+  root2[2,i]=round(solve2(k[i]),4)
+}
+
+root2[1,] = k
+rownames(root2) = c('k','A(k)')
+root2
+```
+
+
+## A-B-O blood type problem
+## Answer
+Because of the observed data, we can rewrite the table as:
+
+|Genotype|Frequency|Count|
+|:-:|:-:|:-:|
+|AA|p2|nAA|
+|BB|q2|nBB|
+|OO|r2|41|
+|AO|2pr|28-nAA|
+|BO|2qr|24-nBB|
+|AB|2pq|70|
+| |1|163|
+
+\begin{eqnarray}
+& \hat{r^2}=n_{OO}/n=41/163\doteq 0.2515\, \Rightarrow \hat{r}=0.50\\
+& 2\hat{p}\hat{q}=n_{AB}/n=70/163\doteq 0.4294\, \Rightarrow \hat{p}\hat{q}=0.215\\
+& \hat{p^2}+2\hat{p}\hat{r}=28/163\, \Rightarrow\hat{p^2}+\hat{p}=28/163\tag{1}\\ 
+& \hat{q^2}+2\hat{q}\hat{r}=24/163\, \Rightarrow\hat{q^2}+\hat{q}=24/163\tag{2}\\
+& \text{we have}\quad  p+q+r=1\Rightarrow \hat{p}+\hat{q}=1\\
+& \text{(2)}\, \Rightarrow \hat{p^2}-2\hat{p}=24/163-3/4\tag{3}\\
+& \text{combine (1) and (3)}\quad \Rightarrow 3\hat{p^2}=80/163-3/4\\
+\end{eqnarray}
+
+Record the maximum likelihood values in M-steps,they are increasing.
+
+```{r}
+
+nA. <- 28; nB. <- 24; nOO <- 41; nAB <- 70
+p <- q <- r <- numeric(100)
+p[1] <- 0.2
+q[1] <- 0.2
+r[1] <- (1- p[1]- q[1])
+
+f <- function(a,b) {
+  return((nB.*b/(2-b-2*a)+nB.+nAB)/(nA.*a/(2-a-2*b)+nA.+nAB))
+}
+g <- function(a,b) {
+((1-a/(2-a-2*b))*nA.+(1-b/(2-b-2*a))*nB.+2*nOO)/((nB.*b/(2-b-2*a)+nB.+nAB))
+}
+threshold <- 1e-5
+
+for (k in 2:100) {
+   p[k] <- 1/(1+f(p[k-1],q[k-1])*(1+g(p[k-1],q[k-1])))
+   q[k] <- f(p[k-1],q[k-1])/(1+f(p[k-1],q[k-1])*(1+g(p[k-1],q[k-1])))
+   r[k] <- 1- p[k] - q[k]
+   if((p[k]-p[k-1] <= threshold) & (q[k]-q[k-1] <= threshold) &(r[k]-r[k-1] <= threshold))
+   {print(c(k, p[k], q[k],r[k]))
+       break
+    }
+}
+x <- seq(1,k,1)
+plot(x, p[1:k], "b", col = "green",ylim=c(0,0.7), main = "The log-maximum likelihood values in M-steps" , xlab = "The number of iteration", ylab = "The value of iteration")
+lines(x, q[1:k], "b", col = "yellow")
+lines(x, r[1:k], "b", col = "red")
+legend("topright", legend = c("p", "q", "r"),lty = 1, col = c("green", "yellow", "red"))
+
+```
+
+# HW9(2019/12/13)
+## Exercise 3(P204)
+Use both for loops and lapply() to fit linear models to the mtcars using the formulas stored in this list:
+## Answer
+```{r}
+formulas <- list(
+mpg ~ disp,
+mpg ~ I(1 / disp),
+mpg ~ disp + wt,
+mpg ~ I(1 / disp) + wt
+)
+# lapply
+la1 <- lapply(formulas, lm, data = mtcars)
+la2 <- lapply(formulas, function(x) lm(formula = x, data = mtcars))
+# for loop
+lf1 <- vector("list", length(formulas))
+for (i in seq_along(formulas)){
+lf1[[i]] <- lm(formulas[[i]], data = mtcars)
+}
+
+```
+Note that all versions return the same content, but they won’t be identical, since the values of the “call” element will differ between each version.
+
+## Exercise 4(P204)
+Fit the model mpg ~ disp to each of the bootstrap replicates of mtcars in the list
+below by using a for loop and lapply() . Can you do it without an anonymous function?
+## Answer
+```{r}
+bootstraps <- lapply(1:10, function(i) {
+rows <- sample(1:nrow(mtcars), rep = TRUE)
+mtcars[rows, ]
+})
+# lapply without anonymous function
+la <- lapply(bootstraps, lm, formula = mpg ~ disp)
+# for loop
+lf <- vector("list", length(bootstraps))
+for (i in seq_along(bootstraps)){
+lf[[i]] <- lm(mpg ~ disp, data = bootstraps[[i]])
+}
+
+```
+
+## Exercise 5(P204)
+For each model in the previous two exercises, extract using the function below
+## Answer
+For the models in exercise 3:
+```{r}
+rsq <- function(mod) summary(mod)$r.squared
+sapply(la1, rsq)
+sapply(la2, rsq)
+sapply(lf1, rsq)
+```
+And the models in exercise 4:
+```{r}
+sapply(la, rsq)
+sapply(lf, rsq)
+```
+
+
+## Exercise 3(P213)
+The following code simulates the performance of a t-test for non-normal data. Use
+sapply() and an anonymous function to extract the p-value from every trial.
+## Answer
+```{r}
+trials <- replicate(
+100,
+t.test(rpois(10, 10), rpois(7, 10)),
+simplify = FALSE
+)
+# anonymous function:
+sapply(trials, function(x) x[["p.value"]])
+# without anonymous function:
+sapply(trials, "[[", "p.value")
+```
+
+
+## Exercise 7(P214)
+Implement mcsapply() , a multicore version of sapply() . Can you implement mcvapply() , a parallel version of vapply() ? Why or why not?
+## Answer
+ 
+```{r}
+library(parallel)
+mcsapply<-function(x){
+  unlist(mclapply(x, sqrt, mc.cores = 3))
+}
+```
+My computer doesn't support the operation of function, so I don't know if the implement of this function is feasible.
+

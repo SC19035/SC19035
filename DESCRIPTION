@@ -1,0 +1,15 @@
+Package: SC19035
+Type: Package
+Title: SC19035,The Example functions for 'Statistical Computing' course
+Version: 1.0
+Date: 2020-01-02
+Author: yingli
+Maintainer: Yingli <3292880082@qq.com>
+Description: Example functions for 'Statistical Computing' course.Several R function are included in this package for illustration.
+License: GPL (>= 2)
+Imports: Rcpp (>= 1.0.3),microbenchmark, knitr, rmarkdown,ggplot2,GGally,boot,bootstrap,Ball,MASS,DAAG,microbenchmark,Rcpp,parallel
+Encoding: UTF-8
+LinkingTo: Rcpp
+RoxygenNote: 7.0.2
+Suggests:knitr, rmarkdown
+VignetteBuilder:knitr
